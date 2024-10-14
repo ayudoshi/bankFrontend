@@ -13,7 +13,7 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://127.0.0.1:3000/api/auth/login', formData);
+      const res = await axios.post('https://bankbackend-hh8c.onrender.com/api/auth/login', formData);
       // Assuming the backend responds with the token on success
       localStorage.setItem('token', res.data.token);
       setError('');  // Clear error if login is successful

@@ -30,7 +30,7 @@ function Register() {
     }
     setError('');
     try {
-      await axios.post('http://127.0.0.1:3000/api/auth/register', { username, password });
+      await axios.post('https://bankbackend-hh8c.onrender.com/api/auth/register', { username, password });
       navigate('/login');  // Redirect to login after successful registration
     } catch (err) {
       if (err.response && err.response.status === 400) {

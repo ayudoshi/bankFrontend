@@ -5,7 +5,7 @@ function Home() {
   return (
     <div>
       <h1>Welcome to the Bank Account Manager</h1>
-      <div class="home-div">
+      <div className="home-div">
         <Link to="/login">
           <button>Login</button>
         </Link>

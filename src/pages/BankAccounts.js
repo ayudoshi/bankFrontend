@@ -10,13 +10,14 @@ function BankAccounts() {
     ifscCode: ''
   });
   const [error, setError] = useState('');
+  const [isEditing, setIsEditing] = useState(null);
 
   useEffect(() => {
     // Fetch all bank accounts when the component mounts
     const fetchAccounts = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://127.0.0.1:3000/api/bank', {
+        const res = await axios.get('https://bankbackend-hh8c.onrender.com/api/bank', {
           headers: { Authorization: token },
         });
         setAccounts(res.data); // Set the fetched accounts
@@ -57,7 +58,7 @@ function BankAccounts() {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post('http://127.0.0.1:3000/api/bank/add', formData, {
+      const res = await axios.post('https://bankbackend-hh8c.onrender.com/api/bank/add', formData, {
         headers: { Authorization: token },
       });
       setAccounts(res.data); // Update accounts with the new account added
@@ -74,11 +75,65 @@ function BankAccounts() {
     }
   };
 
+  const handleDeleteAccount = async (accountId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`https://bankbackend-hh8c.onrender.com/api/bank/delete/${accountId}`, {
+        headers: { Authorization: token },
+      });
+      setAccounts(accounts.filter(account => account._id !== accountId)); // Remove deleted account from the list
+    } catch (err) {
+      console.error('Error deleting account:', err);
+    }
+  };
+
+  const handleEditAccount = (account) => {
+    setIsEditing(account._id);
+    setFormData({
+      bankName: account.bankName,
+      holderName: account.holderName,
+      accountNumber: account.accountNumber,
+      ifscCode: account.ifscCode
+    });
+  };
+
+  const handleUpdateAccount = async (e) => {
+    e.preventDefault();
+    const { bankName, holderName, accountNumber, ifscCode } = formData;
+
+    if (!validateBankName(bankName) || !validateHolderName(holderName) || !validateAccountNumber(accountNumber) || !validateIfscCode(ifscCode)) {
+      setError('Validation error');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.put(`https://bankbackend-hh8c.onrender.com/api/bank/edit/${isEditing}`, formData, {
+        headers: { Authorization: token },
+      });
+      if (Array.isArray(res.data)) {
+        // Add the new account to the existing accounts list
+        setAccounts(res.data);
+      }else{
+        const newData = await axios.get('https://bankbackend-hh8c.onrender.com/api/bank', {
+          headers: { Authorization: token },
+        });
+        setAccounts(newData.data); 
+      }
+      
+      setIsEditing(null); // Reset the edit mode
+      setFormData({ bankName: '', holderName: '', accountNumber: '', ifscCode: '' }); // Clear form
+    } catch (err) {
+      console.error(err);
+      setError('Could not update the account');
+    }
+  };
+
   return (
     <div>
       <h2>Bank Accounts</h2>
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleAddAccount}>
+      <form onSubmit={isEditing ? handleUpdateAccount : handleAddAccount}>
         <input
           type="text"
           value={formData.bankName}
@@ -103,17 +158,63 @@ function BankAccounts() {
           onChange={(e) => setFormData({ ...formData, ifscCode: e.target.value })}
           placeholder="IFSC Code"
         />
-        <button type="submit">Add Account</button>
+        <button type="submit">{isEditing ? 'Update Account' : 'Add Account'}</button>
       </form>
+
       <ul>
         {accounts.map(account => (
           <li key={account._id}>
             {account.bankName} - {account.accountNumber} ({account.holderName})
+            <button onClick={() => handleEditAccount(account)}>Edit</button>
+            <button onClick={() => handleDeleteAccount(account._id)}>Delete</button>
           </li>
         ))}
       </ul>
     </div>
   );
+
+  // return (
+  //   <div>
+  //     <h2>Bank Accounts</h2>
+  //     {error && <p style={{ color: 'red' }}>{error}</p>}
+  //     <form onSubmit={handleAddAccount}>
+  //       <input
+  //         type="text"
+  //         value={formData.bankName}
+  //         onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+  //         placeholder="Bank Name"
+  //       />
+  //       <input
+  //         type="text"
+  //         value={formData.holderName}
+  //         onChange={(e) => setFormData({ ...formData, holderName: e.target.value })}
+  //         placeholder="Holder Name"
+  //       />
+  //       <input
+  //         type="text"
+  //         value={formData.accountNumber}
+  //         onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+  //         placeholder="Account Number"
+  //       />
+  //       <input
+  //         type="text"
+  //         value={formData.ifscCode}
+  //         onChange={(e) => setFormData({ ...formData, ifscCode: e.target.value })}
+  //         placeholder="IFSC Code"
+  //       />
+  //       <button type="submit">Add Account</button>
+  //     </form>
+  //     <ul>
+  //       {accounts.map(account => (
+  //         <li key={account._id}>
+  //           {account.bankName} - {account.accountNumber} ({account.holderName})
+  //           <button onClick={() => handleEditAccount(account)}>Edit</button>
+  //           <button onClick={() => handleDeleteAccount(account._id)}>Delete</button>
+  //         </li>
+  //       ))}
+  //     </ul>
+  //   </div>
+  // );
 }
 
 export default BankAccounts;
